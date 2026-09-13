@@ -9,7 +9,11 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-client = genai.Client(api_key=settings.gemini_api_key)
+client_kwargs = {"api_key": settings.gemini_api_key}
+if settings.gemini_base_url:
+    client_kwargs["http_options"] = {"base_url": settings.gemini_base_url}
+
+client = genai.Client(**client_kwargs)
 
 
 class TranscriptionResult(BaseModel):
@@ -19,6 +23,24 @@ class TranscriptionResult(BaseModel):
 
 class GeminiTranscriptionError(Exception):
     pass
+
+
+def _extract_json_text(raw_text: str) -> str:
+    """
+    Bəzi provider/proxy-lər (məs. OFOX) response_mime_type=application/json
+    tələbini tam icra etmir və cavabı ```json ... ``` kimi markdown code
+    fence içində qaytarır. Bunu təmizləyirik.
+    """
+    text = raw_text.strip()
+    if text.startswith("```"):
+        # İlk sətri (```json və ya ```) və son ``` işarəsini at
+        lines = text.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+    return text
 
 
 def transcribe_and_translate(
@@ -58,7 +80,7 @@ def transcribe_and_translate(
         raise GeminiTranscriptionError(str(exc)) from exc
 
     try:
-        data = json.loads(response.text)
+        data = json.loads(_extract_json_text(response.text))
     except (ValueError, TypeError):
         logger.exception("Gemini cavabı JSON formatında deyil: %s", getattr(response, "text", None))
         raise GeminiTranscriptionError("Gemini cavabı emal edilə bilmədi")
