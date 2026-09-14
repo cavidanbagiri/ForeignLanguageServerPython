@@ -54,12 +54,23 @@ def transcribe_and_translate(
     Ayrıca STT servisinə ehtiyac yoxdur - Gemini multimodal olaraq audio-nu oxuyur.
     """
     prompt = (
-        f"You will receive a short audio clip of a person speaking {source_lang_name}. "
-        f"1) Transcribe exactly what is said in {source_lang_name}. "
-        f"2) Translate that transcript into {target_lang_name}, naturally and fluently. "
-        "Return only the JSON object matching the given schema. "
-        "If the audio is silent, unclear, or contains no speech, "
-        "return transcript and translated_text as empty strings."
+        f"You will receive a short audio clip that may or may not contain a person "
+        f"speaking {source_lang_name}.\n\n"
+        "CRITICAL RULE: Only transcribe words that are ACTUALLY, CLEARLY spoken and "
+        "audible in the recording. Do NOT guess, invent, or hallucinate speech. "
+        "Background noise, silence, room tone, a fridge hum, breathing, static, "
+        "or any non-speech sound is NOT speech - in these cases you MUST return "
+        "empty strings for both fields. It is much better to return empty strings "
+        "than to invent a sentence that was not actually said.\n\n"
+        f"If (and only if) there is clear, audible, intelligible speech in "
+        f"{source_lang_name}:\n"
+        f"1) Transcribe exactly what is said in {source_lang_name}.\n"
+        f"2) Translate that transcript into {target_lang_name}, naturally and fluently.\n\n"
+        "Return ONLY a JSON object with EXACTLY these two keys, no other keys, "
+        "no extra text, no markdown formatting:\n"
+        '{"transcript": "...", "translated_text": "..."}\n'
+        'Use the exact key name "translated_text" for the translation - '
+        'do not call it "translation" or anything else.'
     )
 
     try:
@@ -72,7 +83,7 @@ def transcribe_and_translate(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=TranscriptionResult,
-                temperature=0.2,
+                temperature=0,
             ),
         )
     except Exception as exc:  # noqa: BLE001
@@ -86,7 +97,13 @@ def transcribe_and_translate(
         raise GeminiTranscriptionError("Gemini cavabı emal edilə bilmədi")
 
     transcript = (data.get("transcript") or "").strip()
-    translated_text = (data.get("translated_text") or "").strip()
+    # Bəzən model 'translated_text' əvəzinə 'translation' kimi fərqli açar
+    # adı qaytarır (xüsusən proxy vasitəsilə) - ehtiyat olaraq bunları da yoxlayırıq
+    translated_text = (
+        data.get("translated_text")
+        or data.get("translation")
+        or ""
+    ).strip()
 
     if not transcript:
         raise GeminiTranscriptionError("Səsdə heç bir nitq aşkarlanmadı")
