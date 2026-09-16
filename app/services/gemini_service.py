@@ -87,14 +87,14 @@ def transcribe_and_translate(
             ),
         )
     except Exception as exc:  # noqa: BLE001
-        logger.exception("Gemini sorğusu uğursuz oldu")
+        logger.exception("Something went wrong with the translation. Please try again.")
         raise GeminiTranscriptionError(str(exc)) from exc
 
     try:
         data = json.loads(_extract_json_text(response.text))
     except (ValueError, TypeError):
         logger.exception("Gemini cavabı JSON formatında deyil: %s", getattr(response, "text", None))
-        raise GeminiTranscriptionError("Gemini cavabı emal edilə bilmədi")
+        raise GeminiTranscriptionError("We couldn't process the translation result. Please try again.")
 
     transcript = (data.get("transcript") or "").strip()
     # Bəzən model 'translated_text' əvəzinə 'translation' kimi fərqli açar
@@ -106,6 +106,6 @@ def transcribe_and_translate(
     ).strip()
 
     if not transcript:
-        raise GeminiTranscriptionError("Səsdə heç bir nitq aşkarlanmadı")
+        raise GeminiTranscriptionError("No speech was detected in the audio.")
 
     return {"transcript": transcript, "translated_text": translated_text}
