@@ -33,7 +33,7 @@ gcloud run deploy talqo-backend \
   --allow-unauthenticated \
   --max-instances 2 \
   --memory 512Mi \
-  --set-env-vars GEMINI_API_KEY=sk-of-XHtqUMlEWMXKdmtFTLGfMpypefXmCvDbRVtHnfBcnLtVdOYFIEBKCsPekhqsUJvt,GEMINI_MODEL=google/gemini-3.8-flash,GEMINI_BASE_URL=https://api.ofox.ai/gemini
+  --set-env-vars GEMINI_API_KEY=sk-of-sənin-açarın,GEMINI_MODEL=google/gemini-3.8-flash,GEMINI_BASE_URL=https://api.ofox.ai/gemini
 ```
 
 Nələr baş verir:

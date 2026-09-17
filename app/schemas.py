@@ -10,3 +10,7 @@ class TranslateResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class SpeakRequest(BaseModel):
+    text: str

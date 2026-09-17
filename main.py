@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import translate
+from app.routers import speak, translate
 
 app = FastAPI(title="Foreign Talker Backend", version="0.1.0")
 
@@ -15,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(translate.router)
+app.include_router(speak.router)
 
 
 @app.get("/health")
