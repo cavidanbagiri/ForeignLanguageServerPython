@@ -1,7 +1,5 @@
-import io
 import json
 import logging
-import wave
 
 from google import genai
 from google.genai import types
@@ -108,70 +106,7 @@ def transcribe_and_translate(
     ).strip()
 
     if not transcript:
+        logger.warning("Gemini boş transcript qaytardı. Xam cavab: %r", response.text)
         raise GeminiTranscriptionError("Səsdə heç bir nitq aşkarlanmadı")
 
     return {"transcript": transcript, "translated_text": translated_text}
-
-
-class SpeechSynthesisError(Exception):
-    pass
-
-
-# Gemini-nin hazır səsləri arasından seçilib - neytral, aydın bir səs.
-# Tam siyahı: https://ai.google.dev/gemini-api/docs/speech-generation
-_TTS_VOICE_NAME = "Kore"
-
-# Gemini native audio çıxışının formatı: 16-bit PCM, mono, 24kHz
-_PCM_SAMPLE_RATE = 24000
-_PCM_CHANNELS = 1
-_PCM_SAMPLE_WIDTH = 2  # bytes (16-bit)
-
-
-def synthesize_speech(text: str) -> bytes:
-    """
-    Verilmiş mətni Gemini-nin native TTS modeli ilə səsə çevirir və
-    birbaşa oxuna bilən WAV bytes qaytarır (frontend heç bir əlavə
-    decode/convert etmədən birbaşa oynada bilsin deyə).
-    """
-    if not text or not text.strip():
-        raise SpeechSynthesisError("Səsləndirmək üçün mətn boşdur")
-
-    try:
-        response = client.models.generate_content(
-            model=settings.gemini_tts_model,
-            contents=text,
-            config=types.GenerateContentConfig(
-                response_modalities=["AUDIO"],
-                speech_config=types.SpeechConfig(
-                    voice_config=types.VoiceConfig(
-                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name=_TTS_VOICE_NAME
-                        )
-                    )
-                ),
-            ),
-        )
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("Gemini TTS sorğusu uğursuz oldu")
-        raise SpeechSynthesisError(str(exc)) from exc
-
-    try:
-        pcm_bytes = response.candidates[0].content.parts[0].inline_data.data
-    except (AttributeError, IndexError, TypeError):
-        logger.exception("Gemini TTS cavabında audio tapılmadı")
-        raise SpeechSynthesisError("Gemini audio qaytarmadı")
-
-    if not pcm_bytes:
-        raise SpeechSynthesisError("Gemini boş audio qaytardı")
-
-    # Xam PCM-i WAV konteynerinə bükürük ki, frontend-də birbaşa
-    # standart audio player ilə oynadıla bilsin (PCM tək başına
-    # sample rate/kanal məlumatı daşımır).
-    wav_buffer = io.BytesIO()
-    with wave.open(wav_buffer, "wb") as wav_file:
-        wav_file.setnchannels(_PCM_CHANNELS)
-        wav_file.setsampwidth(_PCM_SAMPLE_WIDTH)
-        wav_file.setframerate(_PCM_SAMPLE_RATE)
-        wav_file.writeframes(pcm_bytes)
-
-    return wav_buffer.getvalue()

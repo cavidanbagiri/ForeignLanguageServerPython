@@ -20,8 +20,10 @@ Bu zaman brauzerdə Google hesabınla daxil olacaqsan və layihə (project) yara
 ## 2) Lazımi API-ləri aktivləşdir
 
 ```bash
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com texttospeech.googleapis.com
 ```
+
+(`texttospeech.googleapis.com` - səsləndirmə funksiyası üçün lazımdır)
 
 ## 3) Backend qovluğuna keç və deploy et
 

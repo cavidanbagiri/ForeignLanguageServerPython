@@ -14,3 +14,4 @@ class ErrorResponse(BaseModel):
 
 class SpeakRequest(BaseModel):
     text: str
+    language: str = "en"

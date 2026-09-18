@@ -4,8 +4,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     gemini_api_key: str
     gemini_model: str = "gemini-3.6-flash"
-    # Səsləndirmə (TTS) üçün ayrıca model - transkripsiya/tərcümə modelindən fərqlidir
-    gemini_tts_model: str = "gemini-3.1-flash-tts-preview"
     # Boş qalsa - birbaşa Google-a qoşulur.
     # Proxy (OFOX və s.) istifadə edəndə buraya proxy-nin gemini-native
     # base_url-ini yaz, məs: https://api.ofox.ai/gemini
